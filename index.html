@@ -121,13 +121,13 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">1</span>
+          <span class="site-state-item-count">2</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
           <a href="/tags/">
-        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-count">2</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -144,6 +144,127 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/05/05/ROP%E6%94%BB%E5%87%BB/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Jiale Yao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="一个写东西的地方">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | 一个写东西的地方">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2023/05/05/ROP%E6%94%BB%E5%87%BB/" class="post-title-link" itemprop="url">ROP攻击</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2023-05-05 20:58:30 / 修改时间：22:30:38" itemprop="dateCreated datePublished" datetime="2023-05-05T20:58:30+08:00">2023-05-05</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="1-x86-64函数调用机制"><a href="#1-x86-64函数调用机制" class="headerlink" title="1. x86-64函数调用机制"></a>1. x86-64函数调用机制</h3><p>​        <code>call func</code>前，<code>rdi</code>, <code>rsi</code>, <code>rdx</code>, <code>rcx</code>, <code>r8</code>, <code>r9</code>寄存器依次保存<code>argv[0]</code>到<code>argv[6]</code>，其余参数以从左往右的顺序入栈。 函数的返回值一般存储在<code>rax</code>寄存器。函数栈帧从高地址向低地址增长。<code>rsp</code>寄存器指向栈顶。</p>
+<p>下面描述函数调用机制细节，采用AT&amp;T风格汇编代码。<code>rbp</code>寄存器指向栈底函数调用发生时，caller的行为是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"># 参数传递</span><br><span class="line">mov    %rcx,%rsi</span><br><span class="line">mov    %rax,%rdi</span><br><span class="line"># 调用函数func</span><br><span class="line"># 将返回地址入栈，同时跳转到func函数起始地址</span><br><span class="line"># 相当于</span><br><span class="line"># push rip</span><br><span class="line"># jmp 401a53</span><br><span class="line">callq   401a53 &lt;func&gt;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>callee的行为是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"># 保存现场，将上一个栈帧的栈底入栈。</span><br><span class="line">push   %rbp</span><br><span class="line"></span><br><span class="line"># 切换栈帧，在上一个栈帧上建立新的栈帧</span><br><span class="line">mov    %rsp,%rbp</span><br><span class="line">sub    $0x140,%rsp</span><br><span class="line"># 注意到</span><br><span class="line"># insight1:上一个栈帧的栈底保存在栈中</span><br><span class="line"># insight2:上一个栈帧的栈顶即为当前栈帧的栈底</span><br><span class="line">...</span><br><span class="line"></span><br><span class="line"># 切换栈帧</span><br><span class="line"># 把当前栈帧栈底地址给rsp寄存器,对应insight2</span><br><span class="line"># 归还栈中保存的上一个栈帧的栈底地址,对应insight1</span><br><span class="line"># 相当于</span><br><span class="line"># mov %rbp,%rsp</span><br><span class="line"># pop %rbp</span><br><span class="line">leaveq</span><br><span class="line"></span><br><span class="line"># 将返回地址给rip寄存器，继续执行caller</span><br><span class="line"># 相当于pop rip</span><br><span class="line">retq</span><br></pre></td></tr></table></figure>
+
+
+
+<p><img src="/.com//personal_blog\source_posts\ROP攻击\1.png" alt="1"></p>
+<h3 id="2-ROP攻击"><a href="#2-ROP攻击" class="headerlink" title="2.ROP攻击"></a>2.ROP攻击</h3><p>Return Oriented Programming（ROP）攻击通过修改栈帧的返回地址，劫持程序的控制流。若程序存在栈溢出漏洞，敌手可能组合采用下面的办法实时攻击</p>
+<ul>
+<li>修改返回地址，返回到main binary，劫持控制流</li>
+<li>修改返回地址，返回到libc，执行库函数</li>
+<li>构建ROP链，通过若干ROPGadget，修改寄存器和堆栈参数，或执行系统调用</li>
+</ul>
+<h3 id="3-保护机制及其绕过"><a href="#3-保护机制及其绕过" class="headerlink" title="3.保护机制及其绕过"></a>3.保护机制及其绕过</h3><h4 id="3-1-RELRO"><a href="#3-1-RELRO" class="headerlink" title="3.1 RELRO"></a>3.1 RELRO</h4><p>将ELF文件各个部分重新排序</p>
+<p>设置GOT表只读</p>
+<p>一般不会干扰ROP利用</p>
+<h4 id="3-2-Canary"><a href="#3-2-Canary" class="headerlink" title="3.2 Canary"></a>3.2 Canary</h4><p>函数栈上产生一个随机值，函数返回前，将检查这个随机值，若Canary值被篡改，调用<code>__stack_chk_fail</code>函数，程序退出。</p>
+<p>溢出时，覆盖返回地址前必须覆盖Canary所在地址，故必须知道Canary值。</p>
+<h5 id="Canary绕过"><a href="#Canary绕过" class="headerlink" title="Canary绕过"></a><strong>Canary绕过</strong></h5><ul>
+<li>若可以定位Canary的相对&#x2F;绝对地址，且允许任意地址读，可直接读取Canary值。但需提前将Canary所在地址第一个字节写为非0（Canary为了防止任意地址读，将最低为设置为全0，截断puts等函数的打印）。</li>
+<li>若<code>__stack_chk_fail</code>不至于程序崩溃，函数可以被反复调用，且可以观测到Canary检查是否通过，可以暴力破解出Canary值。具体办法是<ul>
+<li>从倒数第二个字节开始，逐次修改当前字节的值，直到Canary检查通过，并将当前值保存到当前位置。</li>
+<li>修改更高字节的值，直到完全泄露Canary。</li>
+</ul>
+</li>
+</ul>
+<h4 id="3-3-NX"><a href="#3-3-NX" class="headerlink" title="3.3 NX"></a>3.3 NX</h4><p>数据段不可执行，只能阻止shellcode执行。</p>
+<h4 id="3-4-PIE"><a href="#3-4-PIE" class="headerlink" title="3.4 PIE"></a>3.4 PIE</h4><p>地址空间随机化。</p>
+<h5 id="PIE绕过"><a href="#PIE绕过" class="headerlink" title="PIE绕过"></a><strong>PIE绕过</strong></h5><ul>
+<li>部分覆盖，因为PIE机制按页随机化ELF文件在内存中的地址，一页为4KB。故地址的最低24个bit不会改变。例如<code>0x205f</code>被映射为<code>0x55fc6d2a105f</code>。 如果敌手只想返回到原本返回地址附近的位置，只要修改较低位即可。</li>
+<li>若部分覆盖不能满足需求，可逐次暴力破解更高位。</li>
+</ul>
+<h3 id="4-tips"><a href="#4-tips" class="headerlink" title="4. tips"></a>4. tips</h3><p>若要进行多次泄露，需要多次进入相同进程的同一代码段，简单说就是让程序循环执行。可以</p>
+<ul>
+<li>返回到<code>_start</code>函数基址，<code>_start</code>将调用<code>__libc_start_main</code>，<code>__libc_start_main</code>调用<code>main</code>函数。若从非<code>main</code>函数处返回，栈帧有可能会以固定的步长向低地址迁移。</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">00000000000012c0 &lt;_start&gt;:</span><br><span class="line">    12c0:	f3 0f 1e fa          	endbr64 </span><br><span class="line">    12c4:	31 ed                	xor    %ebp,%ebp</span><br><span class="line">    12c6:	49 89 d1             	mov    %rdx,%r9</span><br><span class="line">    12c9:	5e                   	pop    %rsi</span><br><span class="line">    12ca:	48 89 e2             	mov    %rsp,%rdx</span><br><span class="line">    12cd:	48 83 e4 f0          	and    $0xfffffffffffffff0,%rsp</span><br><span class="line">    12d1:	50                   	push   %rax</span><br><span class="line">    12d2:	54                   	push   %rsp</span><br><span class="line">    12d3:	4c 8d 05 d6 0e 00 00 	lea    0xed6(%rip),%r8</span><br><span class="line">    12da:	48 8d 0d 5f 0e 00 00 	lea    0xe5f(%rip),%rcx</span><br><span class="line">    12e1:	48 8d 3d 77 0d 00 00 	lea    0xd77(%rip),%rdi # &lt;main&gt;</span><br><span class="line">    12e8:	ff 15 f2 3c 00 00    	callq  *0x3cf2(%rip) #&lt;__libc_start_main@GLIBC_2.2.5&gt;</span><br><span class="line">    12ee:	f4                   	hlt    </span><br><span class="line">    12ef:	90                   	nop</span><br><span class="line"> </span><br></pre></td></tr></table></figure>
+
+
+
+<ul>
+<li><p>返回到<code>__libc_start_main</code> 中<code>0x2405B </code>处地址（注意，此处汇编为Intel风格）。</p>
+<p>当<code>main</code>函数返回时，可通过<code>rbp</code>（上一个函数的<code>rsp</code>寄存器）定位到<code>main</code>函数的诸参数。使libc重新调用<code>main</code>函数。</p>
+</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">.text:000000000002402D loc_2402D:                              ; CODE XREF: __libc_start_main+1DEj</span><br><span class="line">.text:000000000002402D                 lea     rdi, [rsp+0C8h+var_A8] ; env</span><br><span class="line">.text:0000000000024032                 call    _setjmp</span><br><span class="line">.text:0000000000024037                 rep nop edx</span><br><span class="line">.text:000000000002403B                 test    eax, eax</span><br><span class="line">.text:000000000002403D                 jnz     short loc_240A6</span><br><span class="line">.text:000000000002403F                 mov     rax, fs:300h</span><br><span class="line">.text:0000000000024048                 mov     [rsp+0C8h+var_60], rax</span><br><span class="line">.text:000000000002404D                 mov     rax, fs:2F8h</span><br><span class="line">.text:0000000000024056                 mov     [rsp+0C8h+var_58], rax</span><br><span class="line">.text:000000000002405B                 lea     rax, [rsp+0C8h+var_A8]</span><br><span class="line">.text:0000000000024060                 mov     fs:300h, rax</span><br><span class="line">.text:0000000000024069                 mov     rax, cs:environ_ptr</span><br><span class="line">.text:0000000000024070                 mov     rsi, [rsp+8]</span><br><span class="line">.text:0000000000024075                 mov     edi, [rsp+0C8h+var_B4]</span><br><span class="line">.text:0000000000024079                 mov     rdx, [rax]</span><br><span class="line">.text:000000000002407C                 mov     rax, [rsp+0C8h+var_B0]</span><br><span class="line">.text:0000000000024081                 call    rax</span><br></pre></td></tr></table></figure>
+
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -189,7 +310,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2023-05-05 20:25:10" itemprop="dateModified" datetime="2023-05-05T20:25:10+08:00">2023-05-05</time>
+      <time title="修改时间：2023-05-05 20:57:34" itemprop="dateModified" datetime="2023-05-05T20:57:34+08:00">2023-05-05</time>
     </span>
 
   
