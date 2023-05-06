@@ -181,9 +181,15 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">发表于</span>
-      
 
-      <time title="创建时间：2023-05-05 20:58:30 / 修改时间：22:33:55" itemprop="dateCreated datePublished" datetime="2023-05-05T20:58:30+08:00">2023-05-05</time>
+      <time title="创建时间：2023-05-05 20:58:30" itemprop="dateCreated datePublished" datetime="2023-05-05T20:58:30+08:00">2023-05-05</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2023-05-06 10:17:51" itemprop="dateModified" datetime="2023-05-06T10:17:51+08:00">2023-05-06</time>
     </span>
 
   
@@ -196,8 +202,8 @@
     
     
     <div class="post-body" itemprop="articleBody">
-          <h3 id="1-x86-64函数调用机制"><a href="#1-x86-64函数调用机制" class="headerlink" title="1. x86-64函数调用机制"></a>1. x86-64函数调用机制</h3><p>​        <code>call func</code>前，<code>rdi</code>, <code>rsi</code>, <code>rdx</code>, <code>rcx</code>, <code>r8</code>, <code>r9</code>寄存器依次保存<code>argv[0]</code>到<code>argv[6]</code>，其余参数以从左往右的顺序入栈。 函数的返回值一般存储在<code>rax</code>寄存器。函数栈帧从高地址向低地址增长。<code>rsp</code>寄存器指向栈顶。</p>
-<p>下面描述函数调用机制细节，采用AT&amp;T风格汇编代码。<code>rbp</code>寄存器指向栈底函数调用发生时，caller的行为是：</p>
+          <h3 id="1-x86-64函数调用机制"><a href="#1-x86-64函数调用机制" class="headerlink" title="1. x86-64函数调用机制"></a>1. x86-64函数调用机制</h3><p>​        <code>call func</code>前，<code>rdi</code>, <code>rsi</code>, <code>rdx</code>, <code>rcx</code>, <code>r8</code>, <code>r9</code>寄存器依次保存<code>argv[0]</code>到<code>argv[5]</code>，其余参数以从右往左的顺序入栈， 函数的返回值一般存储在<code>rax</code>寄存器。函数栈帧从高地址向低地址增长，<code>rbp</code>寄存器指向栈底，<code>rsp</code>寄存器指向栈顶。</p>
+<p>下面描述函数调用机制细节，采用AT&amp;T风格汇编代码。函数调用发生时，caller的行为是：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"># 参数传递</span><br><span class="line">mov    %rcx,%rsi</span><br><span class="line">mov    %rax,%rdi</span><br><span class="line"># 调用函数func</span><br><span class="line"># 将返回地址入栈，同时跳转到func函数起始地址</span><br><span class="line"># 相当于</span><br><span class="line"># push rip</span><br><span class="line"># jmp 401a53</span><br><span class="line">callq   401a53 &lt;func&gt;</span><br></pre></td></tr></table></figure>
 
 
